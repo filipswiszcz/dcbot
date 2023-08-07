@@ -1,0 +1,9 @@
+# temporary file (future readme)
+
+required python packages (pip):
+    - discord.py[voice]
+    - yt-dlp
+
+required libs on macOS:
+    - ffmpeg (added to $PATH)
+    - opius (copied from git repository and maked)
