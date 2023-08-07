@@ -10,8 +10,7 @@ discord.opus._load_default()
 
 bot = commands.Bot(
     command_prefix="/",
-    description="Personal discord manager.",
-    intents=intents,
+    intents=intents
 )
 
 async def load_extensions():
@@ -22,6 +21,6 @@ async def load_extensions():
 async def main():
     async with bot:
         await load_extensions()
-        await bot.start("__KEY__")
+        await bot.start("MTEzNzIyNzk1Mjk4NDE2MjM4NQ.GPe3eM.SKStOkJv27oirdjkiZz2BIDBf1XxHcDCF194GM")
 
 asyncio.run(main())
