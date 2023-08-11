@@ -26,9 +26,6 @@ class Music(commands.Cog):
         if not state:
             state = State(self.bot, ctx)
             self._states[ctx.guild.id] = state
-        
-        # debug
-        print("_states: ", self._states.items())
 
         return state
     
@@ -83,19 +80,35 @@ class Music(commands.Cog):
             await ctx.send("An error occurred while processing this request.")
         else:
             song = Song(source)
-            #await ctx.send(f"Added to queue {str(source)}.")
             await ctx.voice_state.queued_songs.put(song)
-            await ctx.send(f"Now streaming: {str(source)}")
-            #ctx.voice_client.play(source, after=lambda e: print(f"end of song: {str(source)}"))
+
+            if ctx.voice_state.active:
+                await ctx.send(f"Added to queue: {str(source)}")
+            else: await ctx.send(f"Now streaming: {str(source)}")
+
+    @commands.command(name="skip")
+    async def _skip(self, ctx: commands.Context):
+        """Skip a current playing song"""
+
+        if not ctx.voice_state.active:
+            return await ctx.send("Sirius is not playing any song at the moment.")
+        
+        ctx.voice_state.skip()
+
+    @commands.command(name="pause")
+    async def _pause(self, ctx: commands.Context):
+        """Pauses a current playing song"""
+        pass
 
     @commands.command(name="stop")
     async def _stop(self, ctx: commands.Context):
-        """Stops streaming a song and clears a queue if present"""
+        """Stops streaming after a current song and clears a queue"""
 
         if not ctx.voice_state.voice_channel:
             return await ctx.send("Sirius is not connected to any voice channel.")
         
         ctx.voice_state.queued_songs.clear()
+
         if not ctx.voice_state.active:
             ctx.voice_state.voice_channel.stop()
             await ctx.send("End of stream. Till the next time!")
