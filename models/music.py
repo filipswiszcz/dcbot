@@ -98,7 +98,18 @@ class Music(commands.Cog):
     @commands.command(name="pause")
     async def _pause(self, ctx: commands.Context):
         """Pauses a current playing song"""
-        pass
+
+        if ctx.voice_state.active and ctx.voice_state.voice_channel.is_playing():
+            ctx.voice_state.voice_channel.pause()
+            await ctx.send("Paused the stream.")
+
+    @commands.command(name="resume")
+    async def _resume(self, ctx: commands.Context):
+        """Resumes a paused song"""
+
+        if ctx.voice_state.active and ctx.voice_state.voice_channel.is_paused():
+            ctx.voice_state.voice_channel.resume()
+            await ctx.send("Resumed the stream.")
 
     @commands.command(name="stop")
     async def _stop(self, ctx: commands.Context):
@@ -112,6 +123,7 @@ class Music(commands.Cog):
         if not ctx.voice_state.active:
             ctx.voice_state.voice_channel.stop()
             await ctx.send("End of stream. Till the next time!")
+        else: await ctx.send("Stream will stop after this song.")
 
     @commands.command(name="leave")
     async def _leave(self, ctx: commands.Context):
@@ -122,6 +134,8 @@ class Music(commands.Cog):
         
         await ctx.voice_state.stop()
         del self._states[ctx.guild.id]
+
+        await ctx.send("End of stream. Till the next time!")
 
     @_join.before_invoke
     @_play.before_invoke

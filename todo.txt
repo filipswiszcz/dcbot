@@ -1,8 +1,6 @@
 # temporary file (future readme)
 
-add mysql support
-    get discord key from table or from config file
-add skip command
+get discord key from config file
 
 required python packages (pip):
     - discord.py[voice]
