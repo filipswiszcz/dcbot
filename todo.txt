@@ -1,11 +1,5 @@
-# temporary file (future readme)
+write bot functions
+init it on vps
+write tests
 
-get discord key from config file
-
-required python packages (pip):
-    - discord.py[voice]
-    - yt-dlp
-
-required libs on macOS:
-    - ffmpeg (added to $PATH)
-    - opius (copied from git repository and maked)
+add keys when sending to classroom

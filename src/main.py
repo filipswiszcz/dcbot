@@ -1,7 +1,14 @@
 import os
 import asyncio
+import openai
 import discord
+
 from discord.ext import commands
+
+from constants import (
+    DISCORD_BOT_TOKEN,
+    BOT_INVITE_URL
+)
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -13,14 +20,16 @@ bot = commands.Bot(
     intents=intents
 )
 
+print(f"\nInvite URL: {BOT_INVITE_URL}\n")
+
 async def load_extensions():
-    for filename in os.listdir("./models"):
+    for filename in os.listdir("./src/features"):
         if filename.endswith(".py"):
-            await bot.load_extension(f"models.{filename[:-3]}")
+            await bot.load_extension(f"features.{filename[:-3]}")
 
 async def main():
     async with bot:
         await load_extensions()
-        await bot.start("__KEY__")
+        await bot.start(DISCORD_BOT_TOKEN)
 
 asyncio.run(main())
