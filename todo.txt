@@ -1,5 +1,0 @@
-write bot functions
-init it on vps
-write tests
-
-add keys when sending to classroom

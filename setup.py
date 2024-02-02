@@ -6,7 +6,7 @@ with open("README.md") as f:
 setup(
     name="sirius",
     version="0.0.2",
-    description=".",
+    description="Discord bot.",
     long_description=readme,
     author="Filip Świszcz"
 )
