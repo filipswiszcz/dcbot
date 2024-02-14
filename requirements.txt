@@ -1,6 +1,7 @@
 python-dotenv
 discord.py
 openai
+yt_dlp
 dacite
 PyYAML
 PyNaCl

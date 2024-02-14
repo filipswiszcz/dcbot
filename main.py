@@ -10,6 +10,7 @@ from sirius.constants import (
     BOT_INVITE_URL
 )
 
+discord.opus._load_default()
 
 intents = discord.Intents.default()
 intents.members = True

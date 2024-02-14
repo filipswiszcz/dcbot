@@ -69,5 +69,5 @@ class AI(commands.Cog):
                         await ctx.send(file=File(data, "image.png"))
 
         except Exception as exc:
-            print(f"An error occured: {exc}")
-            await ctx.send("An error occured.")
+            print(f"An error occurred: {exc}")
+            await ctx.send("An error occurred.")
