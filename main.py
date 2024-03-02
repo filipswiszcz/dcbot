@@ -5,10 +5,11 @@ import discord
 
 from discord.ext import commands
 
-from sirius.constants import (
+from dcbot.constants import (
     DISCORD_BOT_TOKEN,
     BOT_INVITE_URL
 )
+
 
 discord.opus._load_default()
 
@@ -23,10 +24,7 @@ bot = commands.Bot(
 
 
 async def load_extensions():
-    #for filename in os.listdir("./sirius/features"):
-        #if filename.endswith(".py"):
-            #await bot.load_extension(f"features.{filename[:-3]}")
-    await bot.load_extension("sirius.features")
+    await bot.load_extension("dcbot.features")
 
 
 async def main():

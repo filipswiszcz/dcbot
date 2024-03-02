@@ -1,6 +1,13 @@
+# byte-compiled files
 __pycache__
 .pytest_cache
-.vscode
-.DS_Store
+
+# environment files
 .env
 env/
+
+# vscode files
+.vscode
+
+# macos files
+.DS_Store

@@ -6,12 +6,12 @@ from typing import Dict, List, Literal
 from dacite import from_dict
 from yaml import safe_load
 
-from sirius.base import Guideline
+from dcbot.base import Guideline
 
 load_dotenv()
 
 
-GUIDELINE: Guideline = from_dict(Guideline, safe_load(open("sirius/pre_prompt_sirius.yml", "r")))
+GUIDELINE: Guideline = from_dict(Guideline, safe_load(open("dcbot/pre_prompt_sirius.yml", "r")))
 
 NAME = GUIDELINE.name
 INSTRUCTIONS = GUIDELINE.instructions

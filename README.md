@@ -1,18 +1,19 @@
-# sirius
+# dcbot
 
 ## features
 
 - AI text assistant
 - AI image generator
+- music broadcaster
 
 
 ## dependencies
-[python-dotenv, discord.py, openai, PyYAML, PyNaCl, pytest, dpytest]
+[python-dotenv, discord.py, openai, PyYAML, PyNaCl, async_timeout, pytest, dpytest]
 
 
 ## installation
 
-* use pip to install required python packages (pip):
+* use pip to install required packages:
 
 
 ```python

@@ -2,17 +2,28 @@ import asyncio
 import functools
 import itertools
 
+from async_timeout import timeout
+
 from discord import (
     PCMVolumeTransformer,
     FFmpegPCMAudio
 )
 from discord.ext import commands
 
-from yt_dlp import YoutubeDL
+from yt_dlp import utils, YoutubeDL
+
+from dcbot.constants import NAME
+
+
+utils.bug_reports_message = lambda: ""
+
+
+class VoiceChannelException(Exception):
+    """ Raised when there is a problem with voice channel """
 
 
 class StreamException(Exception):
-    """Raised when failed to get or process request"""
+    """ Raised when failed to get or process request """
     pass
 
 
@@ -43,76 +54,76 @@ class Music(commands.Cog):
         """ Joins a voice channel """
 
         channel = ctx.author.voice.channel
-        if ctx.voice_state._channel:
-            await ctx.voice_state._channel.move_to(channel); return
+        if ctx.voice_state.voice_channel:
+            await ctx.voice_state.voice_channel.move_to(channel); return
         
-        ctx.voice_state._channel = await channel.connect()
+        ctx.voice_state.voice_channel = await channel.connect()
 
     @commands.command(name="play", aliases=["p"])
     async def _play(self, ctx: commands.Context, *, search: str):
-        """Joins a voice channel and starts to stream a song"""
+        """ Joins a voice channel and starts to stream a song """
 
-        if not ctx.voice_state._channel:
+        if not ctx.voice_state.voice_channel:
             await ctx.invoke(self._join)
 
         await ctx.send("Searching for the song..")
 
         try: source = await _YouTube.prepare_source(ctx, search, loop=self.bot.loop)
         except StreamException:
-            await ctx.send("An error occurred while processing the request.")
+            await ctx.send("An error occurred, while processing the request.")
         else:
             song = _Song(source)
             await ctx.voice_state.queued_songs.put(song)
 
             if ctx.voice_state.is_active():
-                await ctx.send(f"Added to queue: {str(source)}")
+                await ctx.send(f"Added to the queue: {str(source)}")
             else: await ctx.send(f"Now streaming: {str(source)}")
 
     @commands.command(name="skip")
     async def _skip(self, ctx: commands.Context):
-        """Skip a current playing song"""
+        """ Skip a current playing song """
 
         if not ctx.voice_state.is_active():
-            return await ctx.send("Sirius is not playing any song at the moment.")
+            return await ctx.send(f"{NAME} is not playing any song at the moment.")
         
         ctx.voice_state.skip()
 
     @commands.command(name="pause")
     async def _pause(self, ctx: commands.Context):
-        """Pauses a current playing song"""
+        """ Pauses a current playing song """
 
-        if ctx.voice_state.is_active() and ctx.voice_state._channel.is_playing():
-            ctx.voice_state._channel.pause()
+        if ctx.voice_state.is_active() and ctx.voice_state.voice_channel.is_playing():
+            ctx.voice_state.voice_channel.pause()
             await ctx.send("Paused the stream.")
 
     @commands.command(name="resume")
     async def _resume(self, ctx: commands.Context):
-        """Resumes a paused song"""
+        """ Resumes a paused song """
 
-        if ctx.voice_state.is_active() and ctx.voice_state._channel.is_paused():
-            ctx.voice_state._channel.resume()
+        if ctx.voice_state.is_active() and ctx.voice_state.voice_channel.is_paused():
+            ctx.voice_state.voice_channel.resume()
             await ctx.send("Resumed the stream.")
 
     @commands.command(name="stop")
     async def _stop(self, ctx: commands.Context):
-        """Stops streaming after a current song and clears a queue"""
+        """ Stops streaming after a current song and clears a queue """
 
-        if not ctx.voice_state._channel:
-            return await ctx.send("Sirius is not connected to any voice channel.")
+        if not ctx.voice_state.voice_channel:
+            return await ctx.send(f"{NAME} is not connected to any voice channel.")
         
         ctx.voice_state.queued_songs.clear()
 
         if not ctx.voice_state.is_active():
-            ctx.voice_state._channel.stop()
+            ctx.voice_state.voice_channel.stop()
             await ctx.send("End of stream. Till the next time!")
         else: await ctx.send("Stream will stop after this song.")
 
     @commands.command(name="leave")
     async def _leave(self, ctx: commands.Context):
-        """Leaves the voice channel and clears a queue if present"""
+        """ Leaves the voice channel and clears a queue if present """
 
-        if not ctx.voice_state._channel:
-            return await ctx.send("Sirius is not connected to any voice channel.")
+        if not ctx.voice_state.voice_channel:
+            return await ctx.send(f"{NAME} is not connected to any voice channel.")
         
         await ctx.voice_state.stop()
         del self.__states[ctx.guild.id]
@@ -126,7 +137,7 @@ class Music(commands.Cog):
             raise commands.CommandError("You are not connected to any voice channel.")
         if ctx.voice_client:
             if ctx.voice_client.channel != ctx.author.voice.channel:
-                raise commands.CommandError("Siurius is already connected to the voice channel.")
+                raise commands.CommandError(f"{NAME} is already connected to the voice channel.")
 
     def cog_check(self, ctx: commands.Context):
         if not ctx.guild:
@@ -136,6 +147,62 @@ class Music(commands.Cog):
     def cog_unload(self):
         for state in self.__states.values():
             self.bot.loop.create_task(state.stop())
+
+
+class _State:
+    def __init__(self, bot: commands.Bot, ctx: commands.Context):
+        self.bot = bot
+        self._ctx = ctx
+        self.curr_song = None
+        self.next_song = asyncio.Event()
+        self.voice_channel = None
+        self.queued_songs = _Playlist()
+        self.__loop = False
+        self.queue_loop = bot.loop.create_task(self.__queue_loop_task())
+        self.volume = 1
+        self.skip_votes = set()
+
+    def __del__(self):
+        self.queue_loop.cancel()
+
+    async def __queue_loop_task(self):
+        while True:
+            self.next_song.clear()
+            if not self.get_loop():
+                try:
+                    async with timeout(300):
+                        self.curr_song = await self.queued_songs.get()
+                except asyncio.TimeoutError:
+                    self.bot.loop.create_task(self.stop()); return
+
+            self.curr_song.source.volume = self.volume
+            self.voice_channel.play(self.curr_song.source, after=self.next)
+            
+            await self.next_song.wait()
+
+    def get_loop(self):
+        return self.__loop
+
+    def set_loop(self, status: bool):
+        self.__loop = status
+
+    def is_active(self):
+        return self.voice_channel and self.curr_song
+
+    def next(self, error=None):
+        if error: pass
+        self.next_song.set()
+
+    def skip(self):
+        self.skip_votes.clear()
+        if self.is_active():
+            self.voice_channel.stop()
+
+    async def stop(self):
+        self.queued_songs.clear()
+        if self.voice_channel:
+            await self.voice_channel.disconnect()
+            self.voice_channel = None
 
 
 class _YouTube(PCMVolumeTransformer):
@@ -201,62 +268,6 @@ class _YouTube(PCMVolumeTransformer):
                 except IndexError: raise Exception
 
         return cls(ctx, FFmpegPCMAudio(d["url"], **cls.ffmpeg_params), data=d)
-
-
-class _State:
-    def __init__(self, bot: commands.Bot, ctx: commands.Context):
-        self.bot = bot
-        self._ctx = ctx
-        self.curr_song = None
-        self.next_song = asyncio.Event()
-        self._channel = None
-        self.queued_songs = _Playlist()
-        self.__loop = False
-        self.queue_loop = bot.loop.create_task(self.__queue_loop_task())
-        self.volume = 1
-        self.skip_votes = set()
-
-    def __del__(self):
-        self.queue_loop.cancel()
-
-    async def __queue_loop_task(self):
-        while True:
-            self.next_song.clear()
-            if not self.get_loop():
-                try:
-                    async with timeout(300):
-                        self.curr_song = await self.queued_songs.get()
-                except asyncio.TimeoutError:
-                    self.bot.loop.create_task(self.stop()); return
-
-            self.curr_song.source.volume = self.volume
-            self._channel.play(self.curr_song.source, after=self.next)
-            
-            await self.next_song.wait()
-
-    def get_loop(self):
-        return self.__loop
-
-    def set_loop(self, status: bool):
-        self.__loop = status
-
-    def is_active(self):
-        return self._channel and self.curr_song
-
-    def next(self, error=None):
-        if error: pass
-        self.next_song.set()
-
-    def skip(self):
-        self.skip_votes.clear()
-        if self.is_active():
-            self._channel.stop()
-
-    async def stop(self):
-        self.queued_songs.clear()
-        if self._channel:
-            await self._channel.disconnect()
-            self._channel = None
 
 
 class _Playlist(asyncio.Queue):

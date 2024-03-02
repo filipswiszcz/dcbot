@@ -8,7 +8,7 @@ import discord.ext.test as dpytest
 
 @pytest.mark.asyncio
 async def test_features_load(bot):
-    assert len(bot.cogs) == 1
+    assert len(bot.cogs) == 2
 
 
 @pytest.mark.asyncio

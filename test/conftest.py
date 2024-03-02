@@ -21,7 +21,7 @@ async def bot():
     )
     
     await bot._async_setup_hook()
-    await bot.load_extension("sirius.features")
+    await bot.load_extension("dcbot.features")
 
     dpytest.configure(bot)
 

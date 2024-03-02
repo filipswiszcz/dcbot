@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from yaml import safe_load
 
-from sirius.constants import (
+from dcbot.constants import (
     OPENAI_API_KEY,
     NAME,
     INSTRUCTIONS
