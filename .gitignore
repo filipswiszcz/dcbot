@@ -1,2 +1,13 @@
-__pycache__/
-env0/
+# byte-compiled files
+__pycache__
+.pytest_cache
+
+# environment files
+.env
+env/
+
+# vscode files
+.vscode
+
+# macos files
+.DS_Store

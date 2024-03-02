@@ -1,0 +1,10 @@
+python-dotenv
+discord.py
+openai
+yt_dlp
+dacite
+PyYAML
+PyNaCl
+async_timeout
+dpytest
+pytest

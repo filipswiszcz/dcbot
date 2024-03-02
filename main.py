@@ -1,26 +1,40 @@
 import os
 import asyncio
+import openai
 import discord
+
 from discord.ext import commands
 
-intents = discord.Intents.default()
-intents.message_content = True
+from dcbot.constants import (
+    DISCORD_BOT_TOKEN,
+    BOT_INVITE_URL
+)
+
 
 discord.opus._load_default()
+
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
 
 bot = commands.Bot(
     command_prefix="/",
     intents=intents
 )
 
+
 async def load_extensions():
-    for filename in os.listdir("./models"):
-        if filename.endswith(".py"):
-            await bot.load_extension(f"models.{filename[:-3]}")
+    await bot.load_extension("dcbot.features")
+
 
 async def main():
     async with bot:
         await load_extensions()
-        await bot.start("__KEY__")
+        await bot.start(DISCORD_BOT_TOKEN)
+        
 
-asyncio.run(main())
+if __name__ == "__main__":
+    print(f"\nInvite URL: {BOT_INVITE_URL}\n")
+    try: asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\nStopping...")
